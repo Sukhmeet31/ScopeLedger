@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-- `npm test`: 37 tests across six files, including three regressions found in independent review (final run below).
+- Final `npm test`: **37/37 passed** across six files, including three regressions found in independent review.
 - `npm run build`: TypeScript check and Vite production bundle passed.
 - `npm run eval`: **NOT_RUN**. No Groq key was configured. Six synthetic cases are available; no real-model accuracy or prompt-injection resistance claim is made.
 - Provider/API tests use injected transports and outputs. They verify input validation, failure handling, prompt/data separation, output bounds and exact citation checks; they do not establish semantic model correctness.
@@ -26,6 +26,8 @@ Verified in the desktop in-app browser at 1360×1000 and 375×812:
 - Over-limit request/context pastes preserve all text, show an explicit limit error, and block analysis. They are not silently truncated by HTML `maxlength`.
 - Closing intake during asynchronous source preparation invalidates the submission before any later network request can start.
 - Save controls disclose that the browser record is local and unencrypted.
+
+The independent reviewer rechecked the fixes and normal submission; no remaining code-review blockers for the local/private handoff. The final full suite and production build both passed after these fixes.
 
 These checks use synthetic data only. Complex/multi-column PDFs, scanned documents, real model output and public hosting have not been validated.
 
