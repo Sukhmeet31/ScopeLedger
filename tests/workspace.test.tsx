@@ -2,10 +2,12 @@
 import React from 'react';
 import { webcrypto } from 'node:crypto';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../client/App';
 import { loadSample } from '../shared/sample';
 import { appendReview } from '../client/workspace';
+import { saveProject } from '../client/storage';
+import userEvent from '@testing-library/user-event';
 beforeEach(() => {
   vi.stubGlobal('crypto', webcrypto);
   vi.stubGlobal('fetch', async () => Response.json({ configured: false, model: null }));
@@ -66,4 +68,75 @@ it('a delayed review for a replaced agreement cannot enter its history', async (
   const project = await loadSample();
   const stale = { ...project.reviews[0], documentHash: '0'.repeat(64) };
   expect(appendReview(project, stale)).toBe(project);
+});
+
+async function openImportedReview() {
+  saveProject(await loadSample());
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Know what you agreed.' });
+  fireEvent.click(screen.getByRole('button', { name: 'Restore saved project' }));
+  await screen.findByText(/Restored saved project/i);
+  fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+}
+it('keeps an unsubmitted request and its context while checking the brief', async () => {
+  await openImportedReview();
+  fireEvent.change(screen.getByLabelText('Paste the new request'), {
+    target: { value: 'Change the headline.' },
+  });
+  fireEvent.change(screen.getByLabelText(/Relevant project context/), {
+    target: { value: 'First approval is pending.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Project brief' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+  expect((screen.getByLabelText('Paste the new request') as HTMLTextAreaElement).value).toBe(
+    'Change the headline.',
+  );
+  expect((screen.getByLabelText(/Relevant project context/) as HTMLTextAreaElement).value).toBe(
+    'First approval is pending.',
+  );
+});
+it('retains over-limit pasted conditions and blocks analysis instead of silently truncating', async () => {
+  const user = userEvent.setup();
+  await openImportedReview();
+  const text = 'x'.repeat(5000) + ' Only after approval.';
+  await user.click(screen.getByLabelText('Paste the new request'));
+  await user.paste(text);
+  expect((screen.getByLabelText('Paste the new request') as HTMLTextAreaElement).value).toBe(text);
+  expect(
+    (screen.getByRole('button', { name: 'Check against agreement' }) as HTMLButtonElement).disabled,
+  ).toBe(true);
+  expect(screen.getByRole('alert').textContent).toMatch(/5,000/);
+});
+it('cannot start analysis after closing intake while source hashing is pending', async () => {
+  const fetchSpy = vi.fn(async (_url: string, _init?: RequestInit) =>
+    Response.json({ configured: false }),
+  );
+  vi.stubGlobal('fetch', fetchSpy);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Know what you agreed.' });
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  vi.stubGlobal('crypto', {
+    randomUUID: () => webcrypto.randomUUID(),
+    subtle: {
+      digest: async () => {
+        await gate;
+        return new ArrayBuffer(32);
+      },
+    },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Use your agreement' }));
+  fireEvent.change(screen.getByLabelText('Or paste the agreement'), {
+    target: { value: 'A website for INR 30,000.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Analyze agreement' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Close agreement intake' }));
+  await act(async () => {
+    release();
+    await gate;
+  });
+  expect(fetchSpy.mock.calls.some((args) => String(args[0]) === '/api/brief')).toBe(false);
+  expect(screen.queryByRole('dialog')).toBeNull();
 });

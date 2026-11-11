@@ -4,6 +4,8 @@
 
 The first version connects three practical steps: **agreement → scope check → conversation**. Every supported finding links back to exact source text. Missing project context remains a question. There is no legal risk score, accuracy percentage, or automatic approval.
 
+![ScopeLedger request review with exact source evidence](docs/images/scopeledger-review.jpg)
+
 ## Try it locally
 
 Use Node 24 or newer. Node 22.13+ is also supported by the dependencies.

@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-- `npm test`: 34 tests passed across six files before final review.
+- `npm test`: 37 tests across six files, including three regressions found in independent review (final run below).
 - `npm run build`: TypeScript check and Vite production bundle passed.
 - `npm run eval`: **NOT_RUN**. No Groq key was configured. Six synthetic cases are available; no real-model accuracy or prompt-injection resistance claim is made.
 - Provider/API tests use injected transports and outputs. They verify input validation, failure handling, prompt/data separation, output bounds and exact citation checks; they do not establish semantic model correctness.
@@ -19,6 +19,13 @@ Verified in the desktop in-app browser at 1360×1000 and 375×812:
 - JSON export downloads and imports successfully with imported provenance.
 - A real one-page synthetic PDF extracts in the browser with its text and actual page count. Fixture: `tests/fixtures/agreement.pdf`.
 - Pasted agreement analysis with no key returns an explicit unavailable error and keeps the current sample workspace.
+
+## Independent review fixes
+
+- Unsubmitted request/context now survive view changes within the current project.
+- Over-limit request/context pastes preserve all text, show an explicit limit error, and block analysis. They are not silently truncated by HTML `maxlength`.
+- Closing intake during asynchronous source preparation invalidates the submission before any later network request can start.
+- Save controls disclose that the browser record is local and unencrypted.
 
 These checks use synthetic data only. Complex/multi-column PDFs, scanned documents, real model output and public hosting have not been validated.
 

@@ -49,6 +49,7 @@ export default function App() {
   const [project, setProject] = useState<Project | null>(null);
   const [view, setView] = useState<View>('brief');
   const [reviewId, setReviewId] = useState('');
+  const [requestInput, setRequestInput] = useState({ request: '', context: '' });
   const [evidence, setEvidence] = useState<Evidence | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   function showEvidence(next: Evidence) {
@@ -72,6 +73,7 @@ export default function App() {
     setProject(next);
     setView('brief');
     setReviewId(next.reviews[0]?.id ?? '');
+    setRequestInput({ request: '', context: '' });
     setEvidence(next.brief.terms.find((t) => t.category === 'payment')?.evidence[0] ?? null);
     setFocusRequest(0);
     setError('');
@@ -394,6 +396,8 @@ export default function App() {
                 />
               ) : view === 'review' ? (
                 <ReviewView
+                  input={requestInput}
+                  onInput={setRequestInput}
                   key={project.document.id}
                   project={project}
                   review={review}
@@ -439,7 +443,10 @@ export default function App() {
           <section className="records" aria-label="Project records">
             <div>
               <strong>Your workspace, your choice.</strong>
-              <p>Not saved automatically. Browser saves and exports include the full agreement.</p>
+              <p>
+                Not saved automatically. Browser saves stay on this device, unencrypted. Saves and
+                exports include the full agreement.
+              </p>
             </div>
             <div className="record-actions">
               <button

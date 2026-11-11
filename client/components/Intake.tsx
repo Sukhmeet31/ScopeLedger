@@ -21,14 +21,22 @@ export function Intake({
   const [text, setText] = useState('');
   const [fileInput, setFileInput] = useState<DocumentInput | null>(null);
   const [reading, setReading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [localError, setLocalError] = useState('');
   const fileVersion = useRef(0);
+  const submitVersion = useRef(0);
+  function close() {
+    submitVersion.current++;
+    fileVersion.current++;
+    onClose();
+  }
   useEffect(() => {
     const el = dialog.current;
     if (el?.showModal) el.showModal();
     else el?.setAttribute('open', '');
     return () => {
       fileVersion.current++;
+      submitVersion.current++;
     };
   }, []);
   async function selectFile(file: File) {
@@ -51,15 +59,23 @@ export function Intake({
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy || reading || preparing) return;
+    const version = ++submitVersion.current;
+    setPreparing(true);
     setLocalError('');
     try {
       const input = fileInput
         ? { ...fileInput, title }
         : { title, kind: 'text' as const, pages: [text] };
       const document = await createDocument(input);
-      await onAnalyze(document.input);
+      if (version === submitVersion.current) await onAnalyze(document.input);
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'Check the agreement and try again.');
+      if (version === submitVersion.current)
+        setLocalError(
+          error instanceof Error ? error.message : 'Check the agreement and try again.',
+        );
+    } finally {
+      if (version === submitVersion.current) setPreparing(false);
     }
   }
   return (
@@ -67,7 +83,7 @@ export function Intake({
       ref={dialog}
       onCancel={(event) => {
         event.preventDefault();
-        onClose();
+        close();
       }}
       aria-labelledby="intake-title"
       className="intake-dialog"
@@ -77,7 +93,7 @@ export function Intake({
           <span className="eyebrow">START WITH WHAT’S AGREED</span>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             className="icon-button"
             aria-label="Close agreement intake"
           >
@@ -98,7 +114,7 @@ export function Intake({
             aria-label="Upload agreement"
             type="file"
             accept=".pdf,.txt"
-            disabled={reading || busy}
+            disabled={reading || busy || preparing}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) void selectFile(file);
@@ -111,6 +127,7 @@ export function Intake({
         </label>
         <input
           id="agreement-title"
+          disabled={busy || preparing}
           value={title}
           maxLength={180}
           onChange={(e) => setTitle(e.target.value)}
@@ -121,13 +138,19 @@ export function Intake({
             {fileInput ? 'Extracted text preview' : 'Or paste the agreement'}
           </label>
           {fileInput && (
-            <button type="button" className="text-button" onClick={() => setFileInput(null)}>
+            <button
+              type="button"
+              className="text-button"
+              disabled={busy || preparing}
+              onClick={() => setFileInput(null)}
+            >
               Edit as verified plain text
             </button>
           )}
         </div>
         <textarea
           id="agreement-text"
+          disabled={busy || preparing}
           value={text}
           onChange={(e) => setText(e.target.value)}
           readOnly={Boolean(fileInput)}
@@ -162,7 +185,9 @@ export function Intake({
           </p>
           <button
             className="button primary"
-            disabled={busy || reading || !text.trim() || text.length > LIMITS.characters}
+            disabled={
+              busy || preparing || reading || !text.trim() || text.length > LIMITS.characters
+            }
           >
             {busy ? <LoaderCircle className="spin" size={16} /> : <ArrowRight size={16} />}
             {busy ? 'Analyzing agreement…' : 'Analyze agreement'}

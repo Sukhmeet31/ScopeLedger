@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ArrowRight, ArrowUpRight, LoaderCircle, CircleHelp } from 'lucide-react';
 import { SAMPLE_SCENARIOS, type SampleScenario } from '../../shared/sample';
 import { LIMITS, type Evidence, type Project, type RequestReview } from '../../shared/schema';
@@ -16,6 +15,8 @@ export function ReviewView({
   onEvidence,
   onDraft,
   onSelect,
+  input,
+  onInput,
 }: {
   project: Project;
   review: RequestReview | null;
@@ -25,9 +26,11 @@ export function ReviewView({
   onEvidence: (e: Evidence) => void;
   onDraft: () => void;
   onSelect: (id: string) => void;
+  input: { request: string; context: string };
+  onInput: (input: { request: string; context: string }) => void;
 }) {
-  const [text, setText] = useState('');
-  const [context, setContext] = useState('');
+  const { request: text, context } = input;
+  const overLimit = text.length > LIMITS.request || context.length > LIMITS.request;
   const sample = project.mode === 'sample';
   return (
     <>
@@ -60,7 +63,7 @@ export function ReviewView({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                onAnalyze(text, context);
+                if (!busy && !overLimit && text.trim()) onAnalyze(text, context);
               }}
             >
               <label className="field-label" htmlFor="client-request">
@@ -69,28 +72,34 @@ export function ReviewView({
               <textarea
                 id="client-request"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
-                maxLength={LIMITS.request}
+                onChange={(e) => onInput({ ...input, request: e.target.value })}
                 rows={4}
                 placeholder="Could we also add…"
                 required
               />
+              <p className="counter">{text.length.toLocaleString()} / 5,000 characters</p>
               <label className="field-label" htmlFor="project-context">
                 Relevant project context <span className="muted">(optional)</span>
               </label>
               <textarea
                 id="project-context"
                 value={context}
-                onChange={(e) => setContext(e.target.value)}
-                maxLength={LIMITS.request}
+                onChange={(e) => onInput({ ...input, context: e.target.value })}
                 rows={2}
                 placeholder="For example: one revision round used; first design approved."
               />
+              <p className="counter">{context.length.toLocaleString()} / 5,000 characters</p>
+              {overLimit && (
+                <p className="error" role="alert">
+                  Request and context must each be at most 5,000 characters. Your full text is
+                  preserved; shorten it before analyzing.
+                </p>
+              )}
               <p className="small muted">
                 The agreement, request, and context are sent to the configured AI provider. Missing
                 context stays uncertain.
               </p>
-              <button className="button primary" disabled={busy || !text.trim()}>
+              <button className="button primary" disabled={busy || overLimit || !text.trim()}>
                 {busy ? <LoaderCircle className="spin" size={15} /> : <ArrowRight size={15} />}
                 {busy ? 'Reviewing request…' : 'Check against agreement'}
               </button>
