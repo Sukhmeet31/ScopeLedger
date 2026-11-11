@@ -12,6 +12,7 @@ import {
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const record = z.object({
   schemaVersion: z.literal(1),
+  mode: z.enum(['sample', 'live', 'imported', 'local']).optional(),
   document: z.object({ hash, input: DocumentInputSchema }),
   brief: BriefOutputSchema.extend({ documentHash: hash }),
   reviews: z
@@ -32,6 +33,7 @@ const record = z.object({
         text: z.string().max(20_000),
         fee: z.string().max(120),
         schedule: z.string().max(160),
+        needsReview: z.boolean().optional(),
       }),
     )
     .max(LIMITS.reviews),
@@ -66,7 +68,7 @@ export async function parseProject(raw: unknown): Promise<Project> {
     throw new Error('A draft must refer to exactly one saved review.');
   return {
     schemaVersion: 1,
-    mode: 'imported',
+    mode: value.mode === 'local' ? 'local' : 'imported',
     document,
     brief,
     reviews,

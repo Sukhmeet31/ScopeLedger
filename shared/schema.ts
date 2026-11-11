@@ -80,7 +80,10 @@ export type Evidence = z.infer<typeof CitationSchema> & {
   end: number;
   page?: number;
 };
-export type Provenance = { kind: 'example' | 'provider' | 'imported'; model?: string };
+export type Provenance = {
+  kind: 'example' | 'provider' | 'imported' | 'local' | 'manual';
+  model?: string;
+};
 export type Term = Omit<z.infer<typeof term>, 'evidence'> & { evidence: Evidence[] };
 export type ReviewItem = Omit<z.infer<typeof item>, 'evidence'> & { evidence: Evidence[] };
 export type ProjectBrief = {
@@ -100,10 +103,16 @@ export type RequestReview = {
   provenance: Provenance;
   createdAt: string;
 };
-export type Draft = { reviewId: string; text: string; fee: string; schedule: string };
+export type Draft = {
+  reviewId: string;
+  text: string;
+  fee: string;
+  schedule: string;
+  needsReview?: boolean;
+};
 export type Project = {
   schemaVersion: 1;
-  mode: 'sample' | 'live' | 'imported';
+  mode: 'sample' | 'live' | 'imported' | 'local';
   document: SourceDocument;
   brief: ProjectBrief;
   reviews: RequestReview[];
