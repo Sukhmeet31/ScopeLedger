@@ -8,4 +8,6 @@ A request produces one review item and possible related passages, always initial
 
 Keep PDF/TXT intake, source navigation, editable template replies, explicit browser saves, and JSON import/export. If a decision changes after drafting, preserve the edited reply and flag it for review. Do not overwrite drafts. Persist this flag. Imported projects remain usable in the local workflow and their interpretations remain unverified imported content.
 
+Review follow-up: local replies include the complete request and explanations explicitly recorded by the user, without copying procedural reviewer guidance to the client. Keep project context separate from the outgoing reply. Persist local-workflow and user-recorded-item metadata across imports. An imported interpretation notice remains even after editing one part. Raise the draft capacity from 20,000 to 32,000 characters so a maximum 12-item imported review with full reasoning and a 5,000-character request can be saved without losing conditions; other input limits are unchanged.
+
 Keep the optional Groq server integration for future use, but the default UI must not call it or request a key. No new dependencies. Existing size limits and cancellation guards remain. No OCR, account sync, or installed local model is part of this change.

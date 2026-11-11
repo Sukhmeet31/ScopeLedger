@@ -6,6 +6,7 @@ export const LIMITS = {
   characters: 60_000,
   request: 5_000,
   reviews: 20,
+  draft: 32_000,
 } as const;
 export const CATEGORIES = [
   'deliverables',
@@ -49,6 +50,7 @@ export const BriefOutputSchema = z.object({
   questions: z.array(sentence).max(8),
 });
 const item = z.object({
+  recordedByUser: z.boolean().optional(),
   title: z.string().min(1).max(180),
   verdict: z.enum(['included', 'addition', 'unclear']),
   explanation: sentence,
@@ -94,6 +96,7 @@ export type ProjectBrief = {
   createdAt: string;
 };
 export type RequestReview = {
+  workflow?: 'local';
   id: string;
   documentHash: string;
   request: string;

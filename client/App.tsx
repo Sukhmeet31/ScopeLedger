@@ -359,8 +359,8 @@ export default function App() {
             </div>
           ) : (
             <div className="example-note">
-              {project.mode === 'imported'
-                ? 'Imported findings — verify the interpretation against the source.'
+              {project.brief.provenance.kind === 'imported'
+                ? 'Imported interpretations — verify the saved terms against the source. New work stays on this device.'
                 : 'On-device suggestions. Confirm terms and scope decisions yourself. No AI or API key needed.'}
             </div>
           )}

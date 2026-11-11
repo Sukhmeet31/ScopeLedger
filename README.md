@@ -4,7 +4,7 @@
 
 The first version connects three practical steps: **agreement → scope check → conversation**. Your own agreements work without an API key or AI account. Local word matching suggests passages; you read the source, confirm terms, and record scope decisions. There is no legal risk score, accuracy percentage, or automatic approval.
 
-![ScopeLedger request review with exact source evidence](docs/images/scopeledger-review.jpg)
+![ScopeLedger local workspace with editable terms and exact source evidence](docs/images/scopeledger-local.jpg)
 
 ## Try it locally
 
@@ -35,6 +35,7 @@ This mode does not interpret legal meaning automatically. English keyword matchi
 - Exact quoted evidence, actual PDF page numbers, and an original-text reader.
 - Editable replies with your own optional fee/schedule proposals; copy, TXT, or Markdown export.
 - Changing a recorded decision preserves your edited reply and flags it to check before sharing.
+- Local reply templates retain the full request and your recorded reasoning, with room for 32,000 characters. Project context and private notes are not automatically copied into replies.
 - One active project, up to 20 reviews, explicit browser save/restore, and portable JSON records.
 - Browser imports rebuild source identity and verify citations. Imported interpretations remain labeled as imported.
 

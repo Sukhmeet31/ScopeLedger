@@ -108,26 +108,29 @@ export function reviewLocal(
       return e ? [e] : [];
     })
     .slice(0, 3);
-  return verifyReview(
-    document,
-    {
-      items: [
-        {
-          title: input.request.length > 180 ? input.request.slice(0, 177) + '…' : input.request,
-          verdict: 'unclear',
-          basis: 'missing_context',
-          evidence,
-          explanation:
-            'No scope decision has been made. These are word matches, not an interpretation. Read the full request and agreement, then record your decision and reasoning.',
-        },
-      ],
-      questions: [
-        'Does the request contain separate changes or conditions? Review each before recording an overall decision.',
-        'Are revision usage, approvals, and any later agreements clear? Ask the client about anything unresolved.',
-      ],
-    },
-    { request: input.request, context: input.context, provenance: { kind: 'local' } },
-  );
+  return {
+    ...verifyReview(
+      document,
+      {
+        items: [
+          {
+            title: input.request.length > 180 ? input.request.slice(0, 177) + '…' : input.request,
+            verdict: 'unclear',
+            basis: 'missing_context',
+            evidence,
+            explanation:
+              'No scope decision has been made. These are word matches, not an interpretation. Read the full request and agreement, then record your decision and reasoning.',
+          },
+        ],
+        questions: [
+          'Does the request contain separate changes or conditions? Review each before recording an overall decision.',
+          'Are revision usage, approvals, and any later agreements clear? Ask the client about anything unresolved.',
+        ],
+      },
+      { request: input.request, context: input.context, provenance: { kind: 'local' } },
+    ),
+    workflow: 'local',
+  };
 }
 
 export function updateLocalTerm(
@@ -140,7 +143,7 @@ export function updateLocalTerm(
   return verifyBrief(
     document,
     { ...brief, terms: brief.terms.map((t) => (t.category === term.category ? term : t)) },
-    { kind: 'manual' },
+    { kind: brief.provenance.kind === 'imported' ? 'imported' : 'manual' },
   );
 }
 
@@ -157,10 +160,18 @@ export function updateLocalDecision(
   return {
     ...verifyReview(
       document,
-      { ...review, items: review.items.map((i, n) => (n === index ? item : i)) },
-      { request: review.request, context: review.context, provenance: { kind: 'manual' } },
+      {
+        ...review,
+        items: review.items.map((i, n) => (n === index ? { ...item, recordedByUser: true } : i)),
+      },
+      {
+        request: review.request,
+        context: review.context,
+        provenance: { kind: review.provenance.kind === 'imported' ? 'imported' : 'manual' },
+      },
     ),
     id: review.id,
     createdAt: review.createdAt,
+    workflow: 'local',
   };
 }

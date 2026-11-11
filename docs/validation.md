@@ -1,4 +1,20 @@
-# Initial validation — 12 November 2026
+# Validation — 12 November 2026
+
+## Current release: no-key local workspace
+
+- `npm test`: **47/47 passed** across seven files. Includes own-agreement creation, conservative matches, exact citations, manual confirmation, foreign-source rejection, stale draft preservation, and import round trips.
+- `npm run build`: TypeScript and production bundle passed after review fixes.
+- The UI regression forbids `fetch()` throughout own-agreement intake, term editing, request review, decision recording, and drafting. No live model calls were made; the user chose local mode instead of API setup.
+- Real browser: uploaded the synthetic TXT fixture, confirmed its payment term, rejected a fabricated quote, selected an exclusion passage manually, recorded a decision, edited a reply, saved/restored, and exported/imported JSON. The edited reply survived. PDF intake produced source-linked page 1 evidence from the existing synthetic PDF.
+- Layout: checked the new editor at 375×812 and the workspace at 1360×1000, with no horizontal overflow. Screenshot: `docs/images/scopeledger-local.jpg`.
+- Browser-verified that changing a decision preserves the edited reply and displays the reminder to review it.
+- Independent review found omitted conditions in long-request replies, loss of the persistent imported interpretation notice, and reviewer instructions leaking into client-facing templates. Regression tests failed before fixes and passed afterward. Browser checks verified the final complete reply and persistent import notice.
+- Draft capacity is now 32,000 characters to fit the full 5,000-character request and all 12 possible recorded explanations. A maximum-size manual review round-trips without losing its reply. Agreement, request, file, page, quote, and review-count limits are unchanged.
+- The no-key workflow is the default even when an optional provider key exists. Public hosting was not provisioned. Legal correctness, OCR, complex PDF reading order, account sync, and live model quality remain outside these checks.
+
+The sections below record earlier milestones and are historical. In particular, the old no-key error behavior has been replaced by the working local workflow above.
+
+## Initial release
 
 ## Automated checks
 

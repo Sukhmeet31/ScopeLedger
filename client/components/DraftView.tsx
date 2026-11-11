@@ -1,5 +1,5 @@
 import { Copy, Download, Plus, ArrowRight } from 'lucide-react';
-import type { Draft } from '../../shared/schema';
+import { LIMITS, type Draft } from '../../shared/schema';
 import { downloadText } from '../files';
 export function DraftView({
   draft,
@@ -42,7 +42,7 @@ export function DraftView({
       onMessage('Add a proposed fee or schedule first.');
       return;
     }
-    if ((draft!.text + lines).length + 2 > 20_000) {
+    if ((draft!.text + lines).length + 2 > LIMITS.draft) {
       onMessage('The draft is too long. Shorten it before adding the proposal.');
       return;
     }
@@ -77,7 +77,7 @@ export function DraftView({
         <textarea
           id="draft-text"
           value={draft.text}
-          maxLength={20_000}
+          maxLength={LIMITS.draft}
           onChange={(e) => onChange({ text: e.target.value })}
           rows={15}
         />

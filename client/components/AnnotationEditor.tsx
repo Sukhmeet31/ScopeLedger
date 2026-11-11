@@ -17,7 +17,9 @@ export function AnnotationEditor({
   const isTerm = 'category' in value;
   const dialog = useRef<HTMLDialogElement>(null);
   const [title, setTitle] = useState(value.title);
-  const [explanation, setExplanation] = useState(value.explanation);
+  const [explanation, setExplanation] = useState(
+    isTerm || value.recordedByUser ? value.explanation : '',
+  );
   const [status, setStatus] = useState(isTerm ? value.status : value.verdict);
   const [quotes, setQuotes] = useState(
     value.evidence.map((e) => ({ blockId: e.blockId, quote: e.quote })),

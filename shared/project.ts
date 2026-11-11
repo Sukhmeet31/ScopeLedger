@@ -18,6 +18,7 @@ const record = z.object({
   reviews: z
     .array(
       ReviewOutputSchema.extend({
+        workflow: z.literal('local').optional(),
         id: z.string().min(1).max(80),
         documentHash: hash,
         request: z.string().max(LIMITS.request),
@@ -30,7 +31,7 @@ const record = z.object({
     .array(
       z.object({
         reviewId: z.string().min(1).max(80),
-        text: z.string().max(20_000),
+        text: z.string().max(LIMITS.draft),
         fee: z.string().max(120),
         schedule: z.string().max(160),
         needsReview: z.boolean().optional(),
@@ -57,6 +58,7 @@ export async function parseProject(raw: unknown): Promise<Project> {
       }),
       id: r.id,
       createdAt: r.createdAt,
+      ...(r.workflow === 'local' || value.mode === 'local' ? { workflow: 'local' as const } : {}),
     };
   });
   if (new Set(reviews.map((r) => r.id)).size !== reviews.length)

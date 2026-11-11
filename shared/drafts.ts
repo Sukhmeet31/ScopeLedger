@@ -8,6 +8,8 @@ export function buildDraft(
     '',
     'Thanks for the request. I checked it against the supplied project agreement.',
   ];
+  const local = review.workflow === 'local';
+  if (local) lines.push('', 'Your request:', review.request);
   const groups = [
     [
       'included',
@@ -21,9 +23,22 @@ export function buildDraft(
   ] as const;
   for (const [verdict, heading] of groups) {
     const items = review.items.filter((i) => i.verdict === verdict);
-    if (items.length) lines.push('', heading, ...items.map((i) => `- ${i.title}`));
+    if (items.length)
+      lines.push(
+        '',
+        heading,
+        ...items.map((i) => {
+          const label = local && review.items.length === 1 ? 'The request above' : i.title;
+          return `- ${label}${local && i.recordedByUser ? `\n  My reading: ${i.explanation}` : ''}`;
+        }),
+      );
   }
-  if (review.questions.length)
+  if (local)
+    lines.push(
+      '',
+      'Could you confirm any outstanding deliverable, revision, or approval details for this request?',
+    );
+  else if (review.questions.length)
     lines.push('', 'Could you confirm the following?', ...review.questions.map((q) => `- ${q}`));
   if (proposal.fee?.trim())
     lines.push('', `Proposed additional fee for discussion: ${proposal.fee.trim()}`);

@@ -7,6 +7,7 @@ import App from '../client/App';
 import { loadSample } from '../shared/sample';
 import { appendReview } from '../client/workspace';
 import { saveProject } from '../client/storage';
+import { createLocalProject } from '../shared/local';
 import userEvent from '@testing-library/user-event';
 beforeEach(() => {
   vi.stubGlobal('crypto', webcrypto);
@@ -28,6 +29,27 @@ it('opens sample terms and follows a citation to the exact source', async () => 
   expect(document.activeElement).toBe(reader);
   expect(within(reader).getByText(/The total project fee is INR 60,000/)).toBeTruthy();
   expect(reader.querySelector('mark')?.textContent).toContain('50% deposit');
+});
+it('keeps imported interpretations labeled after dismissing the toast and editing a term', async () => {
+  saveProject(
+    await createLocalProject({
+      title: 'Saved local project',
+      kind: 'text',
+      pages: ['Payment is due on delivery.'],
+    }),
+  );
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Know what you agreed.' });
+  fireEvent.click(screen.getByRole('button', { name: 'Restore saved project' }));
+  await screen.findByText(/Restored saved project/);
+  fireEvent.click(screen.getByRole('button', { name: 'Dismiss notice' }));
+  expect(screen.getByText(/Imported interpretations/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Payment terms' }));
+  fireEvent.change(screen.getByLabelText('Your explanation'), {
+    target: { value: 'Pay at delivery.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save term' }));
+  expect(screen.getByText(/Imported interpretations/)).toBeTruthy();
 });
 it('switches sample scenarios and edits a draft without losing the changes on navigation', async () => {
   render(<App />);

@@ -7,6 +7,8 @@ import {
 } from '../shared/local';
 import { parseProject } from '../shared/project';
 import { replaceReview } from '../client/workspace';
+import { buildDraft } from '../shared/drafts';
+import { LIMITS } from '../shared/schema';
 
 const agreement = {
   title: 'Harbor illustration agreement',
@@ -18,6 +20,47 @@ const agreement = {
 };
 
 describe('local workspace', () => {
+  it('can save a complete reply for a maximum-size manual review', async () => {
+    const p = await createLocalProject(agreement);
+    const r = reviewLocal(p.document, 'r'.repeat(5000), '');
+    r.items = Array.from({ length: 12 }, () => ({
+      ...r.items[0],
+      title: 't'.repeat(180),
+      explanation: 'e'.repeat(1600),
+    }));
+    let manual = r;
+    for (let i = 0; i < r.items.length; i++)
+      manual = updateLocalDecision(p.document, manual, i, r.items[i]);
+    const text = buildDraft(manual);
+    expect(text).toContain('r'.repeat(5000));
+    expect(text.length).toBeLessThanOrEqual(LIMITS.draft);
+    p.reviews = [manual];
+    p.drafts = [{ reviewId: manual.id, text, fee: '', schedule: '' }];
+    expect((await parseProject(p)).drafts[0].text).toBe(text);
+  });
+  it('keeps long requests and recorded conditions in replies, including after import', async () => {
+    const p = await createLocalProject(agreement);
+    const request =
+      'Please update the illustration with the detailed visual changes we discussed. '.repeat(3) +
+      'Only start after my written approval; do not add animation.';
+    const r = reviewLocal(p.document, request, 'Private working context');
+    const updated = updateLocalDecision(p.document, r, 0, {
+      ...r.items[0],
+      verdict: 'included',
+      basis: 'explicit',
+      explanation: 'Work must wait for written approval.',
+      evidence: p.brief.terms[0].evidence,
+    });
+    p.reviews = [updated];
+    for (const review of [updated, (await parseProject(p)).reviews[0]]) {
+      const draft = buildDraft(review);
+      expect(draft).toContain(request);
+      expect(draft).toContain('Work must wait for written approval.');
+      expect(draft).not.toContain('Private working context');
+      expect(draft).not.toContain('Review each before recording');
+      expect(draft).not.toContain('Ask the client');
+    }
+  });
   it('suggests all six categories from an own agreement with exact offsets and page numbers', async () => {
     const p = await createLocalProject(agreement);
     expect(p.mode).toBe('local');
