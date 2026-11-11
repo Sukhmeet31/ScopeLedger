@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const port = Number(process.env.PORT || 5187);
 const production = process.argv.includes('--production') || process.env.NODE_ENV === 'production';
 const provider = process.env.GROQ_API_KEY
-  ? new GroqProvider(process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile')
+  ? new GroqProvider(process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'openai/gpt-oss-120b')
   : undefined;
 const origins = (process.env.APP_ORIGIN || `http://localhost:${port},http://127.0.0.1:${port}`)
   .split(',')

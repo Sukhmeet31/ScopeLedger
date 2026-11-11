@@ -7,6 +7,10 @@
 - `npm run eval`: **NOT_RUN**. No Groq key was configured. Six synthetic cases are available; no real-model accuracy or prompt-injection resistance claim is made.
 - Provider/API tests use injected transports and outputs. They verify input validation, failure handling, prompt/data separation, output bounds and exact citation checks; they do not establish semantic model correctness.
 
+## Free-plan setup follow-up
+
+On 12 November 2026, Groq's current model catalog listed the original Llama default as Enterprise. The configuration now defaults to `openai/gpt-oss-120b`, which appears in Groq's Free-plan limits, and live evaluations are paced 65 seconds apart. All 37 automated tests and the production build passed after this configuration change. The live evaluation remains **NOT_RUN** pending a key from a confirmed Free-plan account. No paid billing or public hosting was enabled.
+
 ## Browser checks
 
 Verified in the desktop in-app browser at 1360×1000 and 375×812:

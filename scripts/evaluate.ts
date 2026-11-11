@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
 import { createDocument } from '../shared/documents';
 import { verifyReview } from '../shared/evidence';
@@ -32,11 +33,26 @@ if (!process.env.GROQ_API_KEY) {
 } else {
   const provider = new GroqProvider(
     process.env.GROQ_API_KEY,
-    process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+    process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
   );
+  const intervalMs = z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(300_000)
+    .parse(process.env.EVAL_INTERVAL_MS ?? 65_000);
   let passed = 0;
   const results = [];
   for (const test of cases) {
+    if (results.length && intervalMs) {
+      console.error(
+        `Waiting ${intervalMs / 1000}s before ${test.id} to respect the configured request pacing.`,
+      );
+      await delay(intervalMs);
+    }
+    console.error(
+      `Evaluating ${test.id} (${results.length + 1}/${cases.length}) with ${provider.model}.`,
+    );
     const start = performance.now();
     try {
       const document = await createDocument({

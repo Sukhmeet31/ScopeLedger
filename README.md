@@ -22,6 +22,12 @@ The complete fictional Willow Studio example works without an API key: compare a
 
 For your own agreement, add a Groq key to the local `.env` file, then restart the server. Keep it server-side; never paste keys into client code or commit `.env`. The default model is configurable with `GROQ_MODEL`. A configured key is not proof of valid credentials or model availability; provider failures are shown as errors.
 
+### Start without spending money
+
+Run the app on your own computer and keep Groq on its **Free plan**. No paid hosting, database, domain, or subscription is needed for local use. The configured model is `openai/gpt-oss-120b`, which Groq lists with free limits of 30 requests/minute, 1,000 requests/day, 8,000 tokens/minute and 200,000 tokens/day as checked on 12 November 2026. Check your account's actual limits before use: [Groq rate limits](https://console.groq.com/docs/rate-limits). Free-plan requests over quota are rate-limited; do not upgrade to Developer billing if your budget is zero. [Billing details](https://console.groq.com/docs/billing-faqs).
+
+The free token allowance can be lower than this app's document-size ceiling. Start with short agreements; a long agreement plus instructions/output can exceed a single request's available allowance. A model selection alone does not make requests free: the account must remain on the Free plan. No paid fallback is configured.
+
 ## What works
 
 - Pasted English text, UTF-8 TXT, or text-based PDF, extracted on your device.
@@ -71,6 +77,8 @@ npm run eval
 ```
 
 Tests and build require no AI key. `eval` makes six real provider calls when a key is configured. It exits **2 / NOT_RUN** without a key, **1** on a failed case, and **0** when all six verdict sets and citation checks pass. Its report includes the returned explanations for manual inspection. This is a small smoke suite, not a representative legal benchmark. See [validation notes](docs/validation.md) for what was actually run.
+
+Evaluation waits 65 seconds between cases by default to stay within a low token-per-minute quota, so allow about six minutes. Set `EVAL_INTERVAL_MS` only to match your account's limits; pacing does not bypass daily quotas or guarantee that a large individual request fits.
 
 ## Run the production build
 
