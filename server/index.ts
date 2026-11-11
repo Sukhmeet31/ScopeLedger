@@ -6,7 +6,7 @@ import { createApp } from './app';
 import { GroqProvider } from './provider';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const port = Number(process.env.PORT || 5173);
+const port = Number(process.env.PORT || 5187);
 const production = process.argv.includes('--production') || process.env.NODE_ENV === 'production';
 const provider = process.env.GROQ_API_KEY ? new GroqProvider(process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile') : undefined;
 const origins = (process.env.APP_ORIGIN || `http://localhost:${port},http://127.0.0.1:${port}`).split(',').map(s => s.trim()).filter(Boolean);
