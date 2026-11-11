@@ -55,6 +55,17 @@ export function DraftView({
         <span>Editable · unsent · unaccepted</span>
       </div>
       <div className="draft-content">
+        {draft.needsReview && (
+          <div className="notice draft-warning" role="status">
+            <p>
+              The review changed after this reply was drafted. Your text is preserved; check it
+              against the latest decision before sharing.
+            </p>
+            <button className="button" onClick={() => onChange({ needsReview: false })}>
+              I’ve checked this reply
+            </button>
+          </div>
+        )}
         <p className="eyebrow">YOUR WORDS, YOUR DECISION</p>
         <h3>Keep the relationship. Clarify the scope.</h3>
         <p className="muted small">

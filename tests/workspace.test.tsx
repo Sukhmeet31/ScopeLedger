@@ -103,7 +103,7 @@ it('retains over-limit pasted conditions and blocks analysis instead of silently
   await user.paste(text);
   expect((screen.getByLabelText('Paste the new request') as HTMLTextAreaElement).value).toBe(text);
   expect(
-    (screen.getByRole('button', { name: 'Check against agreement' }) as HTMLButtonElement).disabled,
+    (screen.getByRole('button', { name: 'Find related clauses' }) as HTMLButtonElement).disabled,
   ).toBe(true);
   expect(screen.getByRole('alert').textContent).toMatch(/5,000/);
 });
@@ -131,7 +131,7 @@ it('cannot start analysis after closing intake while source hashing is pending',
   fireEvent.change(screen.getByLabelText('Or paste the agreement'), {
     target: { value: 'A website for INR 30,000.' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Analyze agreement' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open local workspace' }));
   fireEvent.click(screen.getByRole('button', { name: 'Close agreement intake' }));
   await act(async () => {
     release();
@@ -139,4 +139,63 @@ it('cannot start analysis after closing intake while source hashing is pending',
   });
   expect(fetchSpy.mock.calls.some((args) => String(args[0]) === '/api/brief')).toBe(false);
   expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.getByText('EXAMPLE WORKSPACE')).toBeTruthy();
+});
+
+it('uses an own agreement, confirms terms and decisions, and preserves drafts without any fetch', async () => {
+  const fetchSpy = vi.fn(() => {
+    throw new Error('Network is forbidden in local mode');
+  });
+  vi.stubGlobal('fetch', fetchSpy);
+  render(<App />);
+  await screen.findByRole('heading', { name: 'Know what you agreed.' });
+  fireEvent.click(screen.getByRole('button', { name: 'Use your agreement' }));
+  fireEvent.change(screen.getByLabelText('Or paste the agreement'), {
+    target: {
+      value:
+        'Payment: 40% deposit.\n\nDeliverables: three illustrations.\n\nAnimation is excluded.',
+    },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Open local workspace' }));
+  await screen.findByText('LOCAL WORKSPACE');
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Payment terms' }));
+  fireEvent.change(screen.getByLabelText('Summary title'), { target: { value: '40% upfront' } });
+  fireEvent.change(screen.getByLabelText('Your explanation'), {
+    target: { value: 'Deposit is due before starting.' },
+  });
+  fireEvent.change(screen.getByLabelText('Term status'), { target: { value: 'found' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save term' }));
+  expect(screen.getByRole('heading', { name: '40% upfront' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+  fireEvent.change(screen.getByLabelText('Paste the new request'), {
+    target: { value: 'Add animation.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Find related clauses' }));
+  await screen.findByText('Needs clarification');
+  fireEvent.click(screen.getByRole('button', { name: 'Record decision' }));
+  fireEvent.change(screen.getByLabelText('Scope decision'), { target: { value: 'addition' } });
+  fireEvent.change(screen.getByLabelText('Your explanation'), {
+    target: { value: 'Animation is expressly excluded.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save decision' }));
+  expect(screen.getByText('Potential addition')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Prepare a reply' }));
+  expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).value).toContain(
+    'Add animation.',
+  );
+  fireEvent.change(screen.getByLabelText('Your reply'), {
+    target: { value: 'My edited reply stays here.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Record decision' }));
+  fireEvent.change(screen.getByLabelText('Scope decision'), { target: { value: 'unclear' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save decision' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Drafts' }));
+  expect((screen.getByLabelText('Your reply') as HTMLTextAreaElement).value).toBe(
+    'My edited reply stays here.',
+  );
+  expect(screen.getByText(/The review changed after this reply was drafted/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'I’ve checked this reply' }));
+  expect(screen.queryByText(/The review changed after this reply was drafted/)).toBeNull();
+  expect(fetchSpy).not.toHaveBeenCalled();
 });

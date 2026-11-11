@@ -8,13 +8,11 @@ export function Intake({
   onAnalyze,
   busy,
   error,
-  configured,
 }: {
   onClose: () => void;
   onAnalyze: (input: DocumentInput) => Promise<void>;
   busy: boolean;
   error: string;
-  configured: boolean | null;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [title, setTitle] = useState('My project agreement');
@@ -163,17 +161,12 @@ export function Intake({
           {fileInput?.kind === 'pdf' ? ` · ${fileInput.pages.length} PDF pages` : ''}
         </p>
         <div className="privacy-note">
-          <strong>You choose when text leaves this device.</strong>
+          <strong>Your agreement stays on this device.</strong>
           <p>
-            Analyze sends the extracted text to this server and its Groq AI provider. The original
-            file is not uploaded. Saving to this browser is a separate choice.
+            Text extraction and keyword matching happen in your browser. No API key, AI service, or
+            account is needed. You review and confirm the terms. Saving is a separate choice.
           </p>
         </div>
-        {configured === false && (
-          <p className="notice">
-            Live AI is not configured on this server yet. The example workspace works without it.
-          </p>
-        )}
         {(localError || error) && (
           <p className="error" role="alert">
             {localError || error}
@@ -181,7 +174,7 @@ export function Intake({
         )}
         <div className="dialog-actions">
           <p className="small muted">
-            A successful analysis replaces the current workspace. Export any work you want to keep.
+            Opening an agreement replaces the current workspace. Export any work you want to keep.
           </p>
           <button
             className="button primary"
@@ -190,7 +183,7 @@ export function Intake({
             }
           >
             {busy ? <LoaderCircle className="spin" size={16} /> : <ArrowRight size={16} />}
-            {busy ? 'Analyzing agreement…' : 'Analyze agreement'}
+            {busy ? 'Opening workspace…' : 'Open local workspace'}
           </button>
         </div>
       </form>

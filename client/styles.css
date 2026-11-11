@@ -19,6 +19,7 @@ body {
 }
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -48,6 +49,7 @@ button:focus-visible,
 a:focus-visible,
 summary:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid #54743a;
   outline-offset: 4px;
@@ -67,6 +69,7 @@ svg {
   flex-shrink: 0;
 }
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid #d8ddd1;
@@ -1093,6 +1096,56 @@ main#main-content {
   justify-content: center;
   flex-direction: column;
   gap: 20px;
+}
+.edit-annotation {
+  margin-top: 16px;
+}
+.annotation-dialog select {
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.annotation-dialog > form > h3 {
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+.quote-editor {
+  min-width: 0;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.quote-editor legend {
+  padding: 0 6px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.quote-editor details {
+  margin: 12px 0;
+  font-size: 12px;
+}
+.source-passage {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.quote-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.draft-warning {
+  margin-bottom: 22px;
+}
+.draft-warning p {
+  margin-bottom: 12px;
+  line-height: 1.7;
 }
 .loading h1 {
   font-size: 24px;

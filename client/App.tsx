@@ -12,13 +12,18 @@ import {
   ShieldCheck,
   RotateCcw,
 } from 'lucide-react';
-import type { DocumentInput, Draft, Evidence, Project } from '../shared/schema';
+import type { DocumentInput, Draft, Evidence, Project, Term, ReviewItem } from '../shared/schema';
 import { LIMITS } from '../shared/schema';
 import { loadSample, reviewSample, type SampleScenario } from '../shared/sample';
 import { buildDraft } from '../shared/drafts';
 import { parseProject } from '../shared/project';
-import { requestBrief, requestReview } from './api';
-import { appendReview } from './workspace';
+import {
+  createLocalProject,
+  reviewLocal,
+  updateLocalTerm,
+  updateLocalDecision,
+} from '../shared/local';
+import { appendReview, replaceReview } from './workspace';
 import { saveProject, restoreProject, clearProject } from './storage';
 import { downloadText } from './files';
 import { BriefView } from './components/BriefView';
@@ -26,6 +31,7 @@ import { ReviewView } from './components/ReviewView';
 import { DraftView } from './components/DraftView';
 import { EvidencePanel } from './components/EvidencePanel';
 import { Intake } from './components/Intake';
+import { AnnotationEditor } from './components/AnnotationEditor';
 
 type View = 'brief' | 'review' | 'draft';
 const HEADINGS = {
@@ -56,7 +62,9 @@ export default function App() {
     setEvidence(next);
     setFocusRequest((v) => v + 1);
   }
-  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [editing, setEditing] = useState<
+    { term: Term } | { index: number; item: ReviewItem } | null
+  >(null);
   const [intake, setIntake] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -76,6 +84,7 @@ export default function App() {
     setRequestInput({ request: '', context: '' });
     setEvidence(next.brief.terms.find((t) => t.category === 'payment')?.evidence[0] ?? null);
     setFocusRequest(0);
+    setEditing(null);
     setError('');
   }
   useEffect(() => {
@@ -86,14 +95,6 @@ export default function App() {
       })
       .catch(() => {
         if (alive) setError('Could not load the example. Reload this page to try again.');
-      });
-    void fetch('/api/status')
-      .then((r) => r.json())
-      .then((s) => {
-        if (alive) setConfigured(s.configured === true);
-      })
-      .catch(() => {
-        if (alive) setConfigured(false);
       });
     return () => {
       alive = false;
@@ -158,11 +159,11 @@ export default function App() {
     setBusy(true);
     setError('');
     try {
-      const next = await requestBrief(input, abort.current.signal);
+      const next = await createLocalProject(input);
       if (version === operation.current) {
         replace(next);
         setIntake(false);
-        setMessage('Agreement analyzed. Review the citations and any open questions.');
+        setMessage('Local workspace ready. Review the suggested passages and confirm your terms.');
       }
     } catch (e) {
       if (version === operation.current)
@@ -179,7 +180,7 @@ export default function App() {
     setBusy(true);
     setError('');
     try {
-      const next = await requestReview(project.document, request, context, abort.current.signal);
+      const next = reviewLocal(project.document, request, context);
       if (version === operation.current) {
         setProject((p) => (p ? appendReview(p, next) : p));
         setReviewId(next.id);
@@ -311,7 +312,9 @@ export default function App() {
                 ? 'EXAMPLE WORKSPACE'
                 : project.mode === 'imported'
                   ? 'IMPORTED RECORD'
-                  : 'LIVE ANALYSIS'}
+                  : project.mode === 'local'
+                    ? 'LOCAL WORKSPACE'
+                    : 'SAVED ANALYSIS'}
             </span>
             <button
               className="button compact"
@@ -358,7 +361,7 @@ export default function App() {
             <div className="example-note">
               {project.mode === 'imported'
                 ? 'Imported findings — verify the interpretation against the source.'
-                : `AI-assisted findings · ${project.brief.provenance.model}. Review before relying on them.`}
+                : 'On-device suggestions. Confirm terms and scope decisions yourself. No AI or API key needed.'}
             </div>
           )}
           {message && (
@@ -393,6 +396,7 @@ export default function App() {
                   onEvidence={showEvidence}
                   onReview={() => navigate('review')}
                   onNote={(note) => setProject((p) => (p ? { ...p, note } : p))}
+                  onEdit={(term) => setEditing({ term })}
                 />
               ) : view === 'review' ? (
                 <ReviewView
@@ -406,6 +410,9 @@ export default function App() {
                   onAnalyze={(request, context) => void analyzeRequest(request, context)}
                   onEvidence={showEvidence}
                   onDraft={prepareDraft}
+                  onDecision={(index) => {
+                    if (review) setEditing({ index, item: review.items[index] });
+                  }}
                   onSelect={(id) => {
                     setReviewId(id);
                     setEvidence(
@@ -516,7 +523,31 @@ export default function App() {
           onAnalyze={analyze}
           busy={busy}
           error={error}
-          configured={configured}
+        />
+      )}
+      {editing && (
+        <AnnotationEditor
+          document={project.document}
+          value={'term' in editing ? editing.term : editing.item}
+          onClose={() => setEditing(null)}
+          onSave={(value) => {
+            if ('term' in editing) {
+              const brief = updateLocalTerm(project.document, project.brief, value as Term);
+              setProject({ ...project, brief });
+            } else if (review) {
+              const updated = updateLocalDecision(
+                project.document,
+                review,
+                editing.index,
+                value as ReviewItem,
+              );
+              setProject(replaceReview(project, updated));
+            }
+            setEditing(null);
+            setMessage(
+              'Your interpretation is recorded in this workspace. Save or export to keep it.',
+            );
+          }}
         />
       )}
     </div>

@@ -17,6 +17,7 @@ export function ReviewView({
   onSelect,
   input,
   onInput,
+  onDecision,
 }: {
   project: Project;
   review: RequestReview | null;
@@ -28,6 +29,7 @@ export function ReviewView({
   onSelect: (id: string) => void;
   input: { request: string; context: string };
   onInput: (input: { request: string; context: string }) => void;
+  onDecision: (index: number) => void;
 }) {
   const { request: text, context } = input;
   const overLimit = text.length > LIMITS.request || context.length > LIMITS.request;
@@ -92,16 +94,16 @@ export function ReviewView({
               {overLimit && (
                 <p className="error" role="alert">
                   Request and context must each be at most 5,000 characters. Your full text is
-                  preserved; shorten it before analyzing.
+                  preserved; shorten it before continuing.
                 </p>
               )}
               <p className="small muted">
-                The agreement, request, and context are sent to the configured AI provider. Missing
-                context stays uncertain.
+                Word matching happens on this device. Review related clauses, then record your own
+                decision. No AI service is used.
               </p>
               <button className="button primary" disabled={busy || overLimit || !text.trim()}>
                 {busy ? <LoaderCircle className="spin" size={15} /> : <ArrowRight size={15} />}
-                {busy ? 'Reviewing request…' : 'Check against agreement'}
+                {busy ? 'Finding clauses…' : 'Find related clauses'}
               </button>
             </form>
           )}
@@ -118,7 +120,14 @@ export function ReviewView({
           <div className="section-heading">
             <h2>Here’s how it breaks down</h2>
             <span>
-              {review.items.length} {review.items.length === 1 ? 'item' : 'items'} · source-linked
+              {review.items.length} {review.items.length === 1 ? 'item' : 'items'} ·{' '}
+              {sample
+                ? 'example'
+                : review.provenance.kind === 'manual'
+                  ? 'your recorded decision'
+                  : review.provenance.kind === 'imported'
+                    ? 'imported record'
+                    : 'awaiting your decision'}
             </span>
           </div>
           {!sample && (
@@ -141,6 +150,11 @@ export function ReviewView({
                   </button>
                 ))}
               </div>
+              {!sample && (
+                <button className="button edit-annotation" onClick={() => onDecision(i)}>
+                  Record decision
+                </button>
+              )}
             </article>
           ))}
           {review.questions.length > 0 && (

@@ -2,7 +2,7 @@
 
 **Good work. Clear terms.** A workspace for freelancers to turn an agreement into a cited project brief, check a client's new request, and prepare a reply they can edit.
 
-The first version connects three practical steps: **agreement → scope check → conversation**. Every supported finding links back to exact source text. Missing project context remains a question. There is no legal risk score, accuracy percentage, or automatic approval.
+The first version connects three practical steps: **agreement → scope check → conversation**. Your own agreements work without an API key or AI account. Local word matching suggests passages; you read the source, confirm terms, and record scope decisions. There is no legal risk score, accuracy percentage, or automatic approval.
 
 ![ScopeLedger request review with exact source evidence](docs/images/scopeledger-review.jpg)
 
@@ -12,29 +12,29 @@ Use Node 24 or newer. Node 22.13+ is also supported by the dependencies.
 
 ```sh
 npm ci
-cp .env.example .env
 npm run dev
 ```
 
-On PowerShell, use `Copy-Item .env.example .env` for the middle command. Open **http://localhost:5187**. Without `.env`, the default port is also 5187.
+Open **http://localhost:5187**. No `.env` or API key is needed. The default port is 5187.
 
 The complete fictional Willow Studio example works without an API key: compare a mixed request, included work, and a request with missing context; inspect citations; edit and download a reply.
 
-For your own agreement, add a Groq key to the local `.env` file, then restart the server. Keep it server-side; never paste keys into client code or commit `.env`. The default model is configurable with `GROQ_MODEL`. A configured key is not proof of valid credentials or model availability; provider failures are shown as errors.
+Choose **Use your agreement → Open local workspace**. Review the suggested clauses, use **Edit / confirm term** to write your summary, then **Request review → Find related clauses → Record decision**. Finish with **Prepare a reply**. Save or export explicitly to keep your work.
 
 ### Start without spending money
 
-Run the app on your own computer and keep Groq on its **Free plan**. No paid hosting, database, domain, or subscription is needed for local use. The configured model is `openai/gpt-oss-120b`, which Groq lists with free limits of 30 requests/minute, 1,000 requests/day, 8,000 tokens/minute and 200,000 tokens/day as checked on 12 November 2026. Check your account's actual limits before use: [Groq rate limits](https://console.groq.com/docs/rate-limits). Free-plan requests over quota are rate-limited; do not upgrade to Developer billing if your budget is zero. [Billing details](https://console.groq.com/docs/billing-faqs).
+Run the app on your own computer. The default workspace needs no paid hosting, database, domain, subscription, API key, or local model installation. Agreement text, clause suggestions, decisions, and reply templates are processed in the browser. Ordinary computer and internet access are the only prerequisites for installing/loading the app.
 
-The free token allowance can be lower than this app's document-size ceiling. Start with short agreements; a long agreement plus instructions/output can exceed a single request's available allowance. A model selection alone does not make requests free: the account must remain on the Free plan. No paid fallback is configured.
+This mode does not interpret legal meaning automatically. English keyword matching can miss wording, exceptions, negations, and implications. No match does not mean no term exists. Read the full agreement and add source quotes yourself where necessary. A request starts as **Needs clarification**, even when matching words are found. Separate mixed requests when different parts need different decisions.
 
 ## What works
 
 - Pasted English text, UTF-8 TXT, or text-based PDF, extracted on your device.
-- Six brief categories: deliverables, exclusions, revisions, payment, timeline, ownership.
-- Item-by-item request review: appears included, potential addition, or needs clarification.
+- Six brief categories with editable, source-linked summaries: deliverables, exclusions, revisions, payment, timeline, ownership.
+- Local request records with related passages and your manual decision: appears included, potential addition, or needs clarification.
 - Exact quoted evidence, actual PDF page numbers, and an original-text reader.
 - Editable replies with your own optional fee/schedule proposals; copy, TXT, or Markdown export.
+- Changing a recorded decision preserves your edited reply and flags it to check before sharing.
 - One active project, up to 20 reviews, explicit browser save/restore, and portable JSON records.
 - Browser imports rebuild source identity and verify citations. Imported interpretations remain labeled as imported.
 
@@ -45,25 +45,25 @@ Limits: 10 MB per file, 30 PDF pages, 60,000 extracted characters, 5,000 each fo
 ```mermaid
 flowchart LR
   A[Paste / TXT / PDF] --> B[Browser extraction and preview]
-  B -->|Analyze: extracted text| C[Node API]
-  C --> D[Groq model]
+  B --> C[Local keyword suggestions]
+  C --> D[User reads and records interpretation]
   D --> E[Schema + exact quote checks]
-  E --> F[Brief / request review]
+  E --> F[Brief / request record]
   F --> G[Editable unsent reply]
   F -->|Explicit choice| H[Browser save / JSON export]
 ```
 
-The original PDF or TXT binary stays in the browser. Analyze sends the extracted agreement text to this server and Groq. Reviewing a request sends the agreement, request, and supplied context again. The server does not store documents and application code does not log their content. Hosting infrastructure and provider handling are separate policies; review them before using sensitive documents. Fonts load from Google Fonts, with local fallback fonts if unavailable.
+The default UI makes no analysis or provider-status API requests. Neither the original file nor its extracted text is uploaded. Fonts load from Google Fonts, with local fallback fonts if unavailable; this does not send agreement content. The app is not an installable offline PWA, so it still needs its local server or static host to load.
 
 No automatic local saving occurs. Saving includes the full agreement, findings, notes, and drafts in unencrypted browser storage. Exported JSON also contains that information. Delete saved copy removes the saved record, while the current in-memory workspace remains until replaced or reloaded. A browser reload starts with the example; use Restore to open a saved record.
 
 ## Engineering choices
 
 - **React + TypeScript + Vite** for the responsive client; **Express** for a same-origin API.
-- **Zod** validates inputs and model output; the server rebuilds trusted source blocks rather than accepting client-supplied offsets.
+- **Zod** validates inputs, manual annotations, imported records, and optional model output.
 - **SHA-256** ties analyses to a canonical source version. Delayed responses cannot enter a replaced project's history.
 - Citations are `{blockId, quote}`. The verifier rejects unknown blocks, missing/ambiguous quotes, and unsupported verdicts without evidence. Offsets and pages are derived from the source.
-- Document and request text enter the provider prompt as untrusted data. A matching quotation does **not** establish that an interpretation is correct; semantic grounding still needs evaluation and user review.
+- Local matching only retrieves possible passages. A matching quotation does **not** establish that an interpretation is correct; the user records the decision.
 - Rate limits, JSON body limits, allowed origins, bounded provider responses, and timeouts guard the API. Provider failures never fall back to fabricated live results.
 
 Source map: `shared/` contains schema, evidence, fixtures, imports and draft assembly; `server/` contains API/provider; `client/` contains file handling and workspace; `tests/` covers behavior; `eval/` contains synthetic model checks.
@@ -73,10 +73,15 @@ Source map: `shared/` contains schema, evidence, fixtures, imports and draft ass
 ```sh
 npm test
 npm run build
-npm run eval
 ```
 
-Tests and build require no AI key. `eval` makes six real provider calls when a key is configured. It exits **2 / NOT_RUN** without a key, **1** on a failed case, and **0** when all six verdict sets and citation checks pass. Its report includes the returned explanations for manual inspection. This is a small smoke suite, not a representative legal benchmark. See [validation notes](docs/validation.md) for what was actually run.
+Tests and build require no AI key. The local UI test forbids fetch while exercising intake, manual annotations, request records, and draft preservation. See [validation notes](docs/validation.md) for what was actually run.
+
+### Optional provider development
+
+The original Groq API and `npm run eval` remain available for future development, but the current UI does not call them, even if a key is configured. To test them deliberately, copy `.env.example` to `.env`, add your own server-side `GROQ_API_KEY`, and select an available model using `GROQ_MODEL`. Never commit secrets. Account pricing and quotas are separate from the no-key workspace: check [Groq rate limits](https://console.groq.com/docs/rate-limits) and [billing details](https://console.groq.com/docs/billing-faqs) before enabling calls.
+
+`eval` makes six real provider calls when a key is configured. It exits **2 / NOT_RUN** without a key, **1** on a failed case, and **0** when all six verdict sets and citation checks pass. This is a small smoke suite, not a representative legal benchmark. Live model evaluation has not been run.
 
 Evaluation waits 65 seconds between cases by default to stay within a low token-per-minute quota, so allow about six minutes. Set `EVAL_INTERVAL_MS` only to match your account's limits; pacing does not bypass daily quotas or guarantee that a large individual request fits.
 
@@ -87,7 +92,7 @@ npm run build
 npm start
 ```
 
-The Node server serves `dist/` and `/api` together. This is not a static-only Vercel upload; deploy it as a Node service, or add an appropriate serverless adapter. Set `HOST=0.0.0.0` only in a hosting environment that needs it, set `APP_ORIGIN` to your exact HTTPS origin, and provide `PORT` and server-side Groq credentials through that host's secret store.
+The Node server serves `dist/` and the optional `/api` together. The no-key UI can also run from `dist/` on a static HTTPS host; it needs no server API. The optional provider endpoints require a Node service or an appropriate serverless adapter. Set `HOST=0.0.0.0` only when hosting requires it, and set `APP_ORIGIN` to the exact HTTPS origin if exposing the API.
 
 Before opening a public, provider-funded endpoint, add the host's access/spend controls and configure a shared rate-limit store for multiple instances. The current in-memory limiter is suited to a single instance; proxy IP trust is intentionally not guessed. No public deployment is included in this repository's initial handoff.
 

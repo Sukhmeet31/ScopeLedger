@@ -1,15 +1,17 @@
 import { ArrowRight, ArrowUpRight, CircleHelp } from 'lucide-react';
-import { CATEGORY_LABELS, type Evidence, type Project } from '../../shared/schema';
+import { CATEGORY_LABELS, type Evidence, type Project, type Term } from '../../shared/schema';
 export function BriefView({
   project,
   onEvidence,
   onReview,
   onNote,
+  onEdit,
 }: {
   project: Project;
   onEvidence: (e: Evidence) => void;
   onReview: () => void;
   onNote: (text: string) => void;
+  onEdit: (term: Term) => void;
 }) {
   const order = ['payment', 'revisions', 'deliverables', 'exclusions', 'timeline', 'ownership'];
   return (
@@ -26,7 +28,7 @@ export function BriefView({
                 {CATEGORY_LABELS[term.category]}
                 {term.status !== 'found' && (
                   <span className="uncertain-tag">
-                    {term.status === 'unclear' ? 'Unclear' : 'Not found in supplied text'}
+                    {term.status === 'unclear' ? 'Needs review' : 'Not found by reviewer'}
                   </span>
                 )}
               </div>
@@ -45,6 +47,15 @@ export function BriefView({
                   </button>
                 ))}
               </div>
+              {project.mode !== 'sample' && (
+                <button
+                  className="text-button edit-annotation"
+                  aria-label={`Edit ${CATEGORY_LABELS[term.category]}`}
+                  onClick={() => onEdit(term)}
+                >
+                  Edit / confirm term
+                </button>
+              )}
             </article>
           ))}
       </div>
@@ -81,7 +92,7 @@ export function BriefView({
           onChange={(e) => onNote(e.target.value)}
           maxLength={5000}
           rows={3}
-          placeholder="Your note — separate from the agreement and AI analysis."
+          placeholder="Your note — separate from the agreement and recorded decisions."
         />
         <p className="small muted">
           Notes are not sent to AI and do not change the quoted terms. Save or export to keep them.
